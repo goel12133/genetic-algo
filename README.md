@@ -12,8 +12,8 @@ MATLAB code for optimizing tokamak coil currents using genetic algorithms to ach
 
 ## Installation
 ```bash
-git clone https://github.com/yourusername/tokamak-optimization.git
-cd tokamak-optimization
+git clone https://github.com/goel12133/genetic-algo.git
+cd genetic-algo
 ```
 
 ## Usage
@@ -72,4 +72,4 @@ options = optimoptions('ga',...
 ```
 
 ## License
-[MIT License](https://opensource.org/licenses/MIT) © 2024 Your Name
+[MIT License](https://opensource.org/licenses/MIT) © 2024 goel12133
