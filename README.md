@@ -1,75 +1,90 @@
-# Tokamak Coil Current Optimization
+# OpenMC Tokamak Neutronics Simulation
 
-![Field Visualization](Field.png)
+This repository contains a full neutron transport simulation of a submersion-style tokamak fusion reactor using OpenMC. The geometry is generated with Paramak and the simulation includes custom materials, neutron source definition, and Tritium Breeding Ratio (TBR) calculation.
 
-MATLAB code for optimizing tokamak coil currents using genetic algorithms to achieve target magnetic field configurations.
-
-## Features
-- **Coil Geometry Generation** - Automatic positioning of toroidal/poloidal coils
-- **Field Calculation** - Biot-Savart law implementation
-- **Multi-Objective Optimization** - Simultaneous toroidal/poloidal field control
-- **Constraint Handling** - Wall shielding & plasma center requirements
+## Requirements
+- Python 3.6+
+- OpenMC
+- Paramak
+- openmc-data-downloader
+- CAD-to-OpenMC converter
+- Nuclear cross section data 
 
 ## Installation
 ```bash
-git clone https://github.com/goel12133/genetic-algo.git
-cd genetic-algo
+git clone https://github.com/goel12133/openmc-paramak-opt.git
+cd openmc-paramak-opt
+pip install openmc paramak openmc-data-downloader
 ```
 
-## Usage
-```matlab
-% Run optimization with default parameters
-[I_opt, best_I, best_cost] = tokamak_optimization();
+## Geometry Explanation
 
-% Access results:
-% I_opt(1:n_coils) - Toroidal currents
-% I_opt(n_coils+1:end) - Poloidal currents
+The simulation uses a **Submersion Tokamak** reactor geometry, created using the Paramak library. The reactor is defined by various radial thicknesses, coil placements, and other key parameters.
+
+### Tokamak Geometry Parameters
+
+| Parameter                            | Description                                      | Value  |
+|--------------------------------------|--------------------------------------------------|--------|
+| `inner_bore_radial_thickness`       | Radial thickness of the central bore            | 30 mm  |
+| `inboard_tf_leg_radial_thickness`   | Thickness of the inboard toroidal field coil leg | 30 mm  |
+| `center_column_shield_radial_thickness` | Thickness of the shielding around the center column | 30 mm  |
+| `divertor_radial_thickness`         | Radial thickness of the divertor                | 80 mm  |
+| `inner_plasma_gap_radial_thickness` | Gap between the plasma and center column        | 50 mm  |
+| `plasma_radial_thickness`           | Radial thickness of the plasma                  | 200 mm |
+| `outer_plasma_gap_radial_thickness` | Gap between the plasma and first wall           | 50 mm  |
+| `firstwall_radial_thickness`        | Thickness of the first wall                     | 30 mm  |
+| `blanket_rear_wall_radial_thickness` | Thickness of the blanket rear wall              | 30 mm  |
+| `number_of_tf_coils`                | Number of toroidal field coils                  | 16     |
+| `rotation_angle`                     | Rotation angle of the reactor geometry          | 360°   |
+| `support_radial_thickness`          | Radial thickness of structural supports         | 90 mm  |
+
+The toroidal and poloidal field coils are positioned strategically to ensure optimal plasma confinement. The reactor includes a vacuum boundary at a radius of **10 m**.
+
+---
+
+## Neutron Source Explanation
+
+A **fixed neutron source** is defined using a Muir energy distribution to simulate **fusion-generated neutrons**. The source has the following properties:
+
+### Neutron Source Parameters
+
+| Parameter       | Description                                         | Value        |
+|----------------|-----------------------------------------------------|-------------|
+| `radius`       | Radial position of neutron emission                 | 293 mm      |
+| `z_values`     | Vertical position of neutron emission               | 0 mm        |
+| `angle`        | Angular distribution of emitted neutrons            | 0° to 90°   |
+| `energy`       | Muir distribution peak energy                       | 14.1 MeV    |
+| `m_rat`        | Mass ratio for energy distribution                   | 5.0         |
+| `kt`          | Thermal spread of neutron energy distribution        | 20 keV      |
+
+The neutron source is **isotropic** and **cylindrically distributed**, ensuring an even spread of fusion neutrons. These neutrons interact with the reactor components, and their behavior is analyzed using OpenMC tallies.
+
+## Customizing
+
+### Breeder Material Change
+
+The breeder material in a fusion reactor is critical for neutron absorption and the production of tritium. In this model, the breeder material is initially set to **Li17Pb83**, a common lithium-lead alloy that is used for its ability to absorb neutrons and breed tritium. 
+
+To customize the breeder material in this model, you can modify the material properties 
+
+
+
+```python
+mat_blanket = openmc.Material(name="blanket")
+mat_blanket.add_elements_from_formula("Li4SiO4")  # New breeder material formula
+mat_blanket.set_density("g/cm3", 2.0)  # Adjusted density for Li4SiO4
 ```
 
-## Key Parameters
-| Parameter       | Description                  | Default Value |
-|-----------------|------------------------------|---------------|
-| `R0`            | Major radius                 | 2.5 m         |
-| `a`             | Minor radius                 | 1.0 m         |
-| `n_coils`       | Number of toroidal coils     | 12            |
-| `n_poloidal`    | Poloidal coils per side      | 6             |
+## Outputs
 
-## Optimization Targets
-- **Toroidal Field**: 5.0 T ± 10% (uniform)
-- **Poloidal Field**: 0.5 T ± 15% (shaped)
-- **Critical Points**:
-  ```text
-  Wall Points: B_pol < 1.0 T
-  Plasma Center: B_pol = 0.2 T ± 0.05
-  ```
+| Output               | Description                                                   |
+|----------------------|---------------------------------------------------------------|
+| `TBR tally`         | Tritium Breeding Ratio tally from neutron interactions        |
+| `Neutron transport` | Simulation of neutron behavior and interactions in the tokamak |
+| `Particle tracks`   | Monte Carlo tracking of neutron paths                         |
+| `Energy deposition` | Heat deposition from neutron interactions                     |
+| `Material reactions`| Nuclear reactions within materials (e.g., (n,Xt) reactions)  |
 
-## Sample Output
-```plaintext
-Optimization complete. Best I value:
-Toroidal currents: [1.02e+06 9.87e+05 ... ] A
-Poloidal currents: [5.12e+05 4.95e+05 ... ] A
-Final cost: 42.37
-
-Field values at critical points:
-Outer wall upper: 0.98 T
-Outer wall lower: 0.97 T
-Inner wall upper: 0.95 T
-Inner wall lower: 0.96 T
-Plasma center:    0.21 T
-```
-
-## Customization
-```matlab
-% Modify in tokamak_optimization.m
-R0 = 3.0;  % Change major radius
-a = 1.2;   % Modify minor radius
-
-% Adjust GA parameters
-options = optimoptions('ga',...
-    'PopulationSize', 150,...
-    'MaxGenerations', 300,...
-    'FunctionTolerance', 1e-5);
-```
 
 ## License
 [MIT License](https://opensource.org/licenses/MIT) © 2024 goel12133
