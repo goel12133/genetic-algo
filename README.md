@@ -93,7 +93,7 @@ mat_blanket.set_density("g/cm3", 2.0)  # Adjusted density for Li4SiO4
 
 
 
-![Field Visualization](field.png)
+![Field Visualization](Field.png)
 
 This module extends the OpenMC-based neutronics model by introducing a **MATLAB-based magnetic confinement optimization**.  
 It determines the **optimal toroidal and poloidal coil currents** that reproduce desired magnetic field profiles while maintaining plasma equilibrium and wall integrity — forming the electromagnetic half of the coupled tokamak simulation.
